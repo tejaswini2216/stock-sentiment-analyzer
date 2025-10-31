@@ -57,3 +57,8 @@ if st.sidebar.button("Analyze Sentiment"):
 # Footer
 st.markdown("---")
 st.caption("Model: [FinBERT (ProsusAI/finbert)](https://huggingface.co/ProsusAI/finbert) | Built by Tejaswini Katamreddy 🌸")
+import streamlit as st
+
+st.title("Streamlit is working!")
+st.write("If you see this, Streamlit is running correctly.")
+
