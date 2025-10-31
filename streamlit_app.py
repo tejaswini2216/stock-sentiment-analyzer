@@ -1,15 +1,16 @@
 import streamlit as st
+import yfinance as yf
+import pandas as pd
+import matplotlib.pyplot as plt
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, pipeline
-import torch
 
-# --- Page Config ---
-st.set_page_config(page_title="Stock Sentiment Analyzer", page_icon="📈", layout="wide")
+# App settings
+st.set_page_config(page_title="📈 AI Stock Sentiment Analyzer", page_icon="🤖", layout="wide")
 
-# --- App Title ---
-st.title("📈 Stock Sentiment Analyzer (FinBERT)")
-st.markdown("Analyze financial news or stock headlines using a FinBERT model fine-tuned for finance-related sentiment.")
+st.title("📈 AI Stock Sentiment Analyzer")
+st.markdown("Analyze **financial headlines** and **stock performance** using FinBERT + Yahoo Finance")
 
-# --- Load Model ---
+# Load FinBERT model
 @st.cache_resource
 def load_model():
     model_name = "ProsusAI/finbert"
@@ -19,32 +20,40 @@ def load_model():
 
 nlp = load_model()
 
-# --- User Input ---
-st.subheader("🔍 Enter financial news or headline:")
-headline = st.text_area("Example: *Apple shares jump after strong earnings report*", height=100)
+# Input section
+st.sidebar.header("🔍 Input Options")
+headline = st.sidebar.text_area("Enter financial news headline:", "Apple shares jump after strong earnings report")
+ticker = st.sidebar.text_input("Enter Stock Symbol (e.g. AAPL, TSLA):", "AAPL")
 
-# --- Analyze Button ---
-if st.button("Analyze Sentiment"):
-    if headline.strip():
-        with st.spinner("Analyzing sentiment..."):
-            result = nlp(headline)[0]
-            label = result['label']
-            score = round(result['score'], 3)
-
-        # --- Display Results ---
-        if label == "positive":
-            color = "🟢 Positive"
-        elif label == "negative":
-            color = "🔴 Negative"
-        else:
-            color = "🟡 Neutral"
-
-        st.success(f"**Sentiment:** {color}")
-        st.metric("Confidence", f"{score*100:.1f}%")
+# Sentiment Analysis
+if st.sidebar.button("Analyze Sentiment"):
+    with st.spinner("Analyzing sentiment..."):
+        result = nlp(headline)[0]
+        label = result['label']
+        score = round(result['score'], 3)
+    
+    if label == "positive":
+        sentiment_display = "🟢 Positive"
+    elif label == "negative":
+        sentiment_display = "🔴 Negative"
     else:
-        st.warning("Please enter a headline to analyze.")
+        sentiment_display = "🟡 Neutral"
 
-# --- About Section ---
+    # Display result
+    st.subheader("Sentiment Analysis Result")
+    st.success(f"**Sentiment:** {sentiment_display}")
+    st.metric("Confidence", f"{score*100:.1f}%")
+
+    # Fetch stock data
+    st.subheader(f"{ticker.upper()} — Recent 7-Day Trend")
+    data = yf.download(ticker, period="7d", interval="1h")
+
+    if not data.empty:
+        st.line_chart(data["Close"])
+        st.caption("Source: Yahoo Finance")
+    else:
+        st.warning("⚠️ Could not fetch stock data. Check the ticker symbol.")
+
+# Footer
 st.markdown("---")
-st.markdown("**Model:** [FinBERT (ProsusAI/finbert)](https://huggingface.co/ProsusAI/finbert)")
-st.markdown("**Built by:** Tejaswini Katamreddy 🌸")
+st.caption("Model: [FinBERT (ProsusAI/finbert)](https://huggingface.co/ProsusAI/finbert) | Built by Tejaswini Katamreddy 🌸")
